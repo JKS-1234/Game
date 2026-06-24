@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pong</title>
+    <style>
+        body { background: #222; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        canvas { border: 2px solid #fff; }
+    </style>
+</head>
+<body>
+    <canvas id="pong" width="600" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById("pong");
+        const ctx = canvas.getContext("2d");
+
+        const ball = { x: 300, y: 200, radius: 10, speed: 5, dx: 5, dy: 5, color: "WHITE" };
+        const user = { x: 0, y: 150, width: 10, height: 100, color: "WHITE", score: 0 };
+        const com = { x: 590, y: 150, width: 10, height: 100, color: "WHITE", score: 0 };
+
+        function drawRect(x, y, w, h, color) { ctx.fillStyle = color; ctx.fillRect(x, y, w, h); }
+        function drawCircle(x, y, r, color) { ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2, false); ctx.closePath(); ctx.fill(); }
+        function drawText(text, x, y) { ctx.fillStyle = "#FFF"; ctx.font = "45px fantasy"; ctx.fillText(text, x, y); }
+
+        canvas.addEventListener("mousemove", getMousePos);
+        function getMousePos(evt) { let rect = canvas.getBoundingClientRect(); user.y = evt.clientY - rect.top - user.height/2; }
+
+        function collision(b, p) {
+            p.top = p.y; p.bottom = p.y + p.height; p.left = p.x; p.right = p.x + p.width;
+            b.top = b.y - b.radius; b.bottom = b.y + b.radius; b.left = b.x - b.radius; b.right = b.x + b.radius;
+            return p.left < b.right && p.top < b.bottom && p.right > b.left && p.bottom > b.top;
+        }
+
+        function resetBall() { ball.x = canvas.width/2; ball.y = canvas.height/2; ball.dx = -ball.dx; ball.speed = 5; }
+
+        function update() {
+            if (ball.x - ball.radius < 0) { com.score++; resetBall(); }
+            else if (ball.x + ball.radius > canvas.width) { user.score++; resetBall(); }
+
+            ball.x += ball.dx; ball.y += ball.dy;
+            com.y += ((ball.y - (com.y + com.height/2))) * 0.1; // Simple AI
+
+            if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) ball.dy = -ball.dy;
+
+            let player = (ball.x + ball.radius < canvas.width/2) ? user : com;
+            if (collision(ball, player)) {
+                let collidePoint = (ball.y - (player.y + player.height/2));
+                collidePoint = collidePoint / (player.height/2);
+                let angleRad = (Math.PI/4) * collidePoint;
+                let direction = (ball.x + ball.radius < canvas.width/2) ? 1 : -1;
+                ball.dx = direction * ball.speed * Math.cos(angleRad);
+                ball.dy = ball.speed * Math.sin(angleRad);
+                ball.speed += 0.5;
+            }
+        }
+
+        function render() {
+            drawRect(0, 0, canvas.width, canvas.height, "#000");
+            drawText(user.score, canvas.width/4, canvas.height/5);
+            drawText(com.score, 3*canvas.width/4, canvas.height/5);
+            drawRect(canvas.width/2 - 1, 0, 2, canvas.height, "#FFF");
+            drawRect(user.x, user.y, user.width, user.height, user.color);
+            drawRect(com.x, com.y, com.width, com.height, com.color);
+            drawCircle(ball.x, ball.y, ball.radius, ball.color);
+        }
+
+        function game() { update(); render(); }
+        const framePerSecond = 50;
+        setInterval(game, 1000/framePerSecond);
+    </script>
+</body>
+</html>
